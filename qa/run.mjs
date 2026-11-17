@@ -267,6 +267,9 @@ try {
     // とことんの並びを何百回作って、1回の中で同じ問題が無い・続けて同じ種類が無い・足しても重ならない
     const r = await p.evaluate(() => { const K = __nm.G, bad = []; for (let n = 0; n < 300; n++) { const l = __nm.endlessList(), more = l.concat(__nm.moreList(l)); const ks = more.map((t) => K.keyOf(K.make(t))); if (new Set(ks).size !== ks.length) bad.push("重なり"); if (more.some((t, i) => i && t.split("|")[0] === more[i - 1].split("|")[0])) bad.push("同じ種類が続く"); if (l.length !== 60 || more.length !== 100) bad.push("数" + l.length + "/" + more.length); } return bad; });
     check("とことんの並び300回：60問＋足した40問で同じ問題も同じ種類の連続も無い（game-dev.md F6）", r.length === 0, r.slice(0, 3).join(","));
+    // 全部の問題を使い切っても、次の周に入って40問ずつ足し続ける（近ごろの30問とは重ねない。shared-workflows#409）
+    const r2 = await p.evaluate(() => { const K = __nm.G, bad = []; let l = __nm.endlessList(); for (let n = 0; n < 40; n++) { const m = __nm.moreList(l); if (m.length !== 40) { bad.push(`${n}回目 ${m.length}問`); break; } l = l.concat(m); } const ks = l.map((t) => K.keyOf(K.make(t))); for (let i = 0; i < ks.length; i++) if (ks.slice(Math.max(0, i - 30), i).includes(ks[i])) { bad.push(`${i}問目が30問以内に重なる`); break; } return bad; });
+    check("とことんは全部の問題を使い切っても40問ずつ足し続け、近ごろの30問とは重ねない（自分で降りるまで終わらない）", r2.length === 0, r2.join(","));
   }
   {
     // 引き継ぎコードなどで数の所に文字が入っても、画面に HTML として出さない（2026-11-05 CodeRabbit）
@@ -328,6 +331,11 @@ try {
     const exp = [1, 4, 5, 6, 7].map(dayBefore).filter((d) => d >= "2026-11-07");
     check("カレンダー：取りこぼした過去7日（第1回より後）を押せる", JSON.stringify(lateList) === JSON.stringify(exp), lateList.join(","));
     check("カレンダー：遊んだ日は★の数の文字も付く", (await q.locator(".cal .c.p3").count()) + (await q.locator(".cal .c.p2").count()) + (await q.locator(".cal .c.p1").count()) >= (dayBefore(3).slice(0, 7) === TODAY.slice(0, 7) ? 2 : 0));
+    if (lateList.length > 1) {
+      // 別のタブで終えたまま記録していない「あとから」の回は、もう一度押しても消さずに記録する（shared-workflows#409）
+      const d = lateList[1], kept = await q.evaluate((d) => { __nm.save((s) => { s.runs["a:" + d] = { mode: "a", date: d, list: __nm.G.dailyTags(d), res: [0, 1, 2, 3, 4].map(() => ({ m: 0 })), cur: null, id: "a" + d }; }); __nm.start("a", d); const s = __nm.load(), ok = !!s.adays[d] && s.runs["a:" + d] && s.runs["a:" + d].res.length === 5; __nm.save((s2) => { delete s2.adays[d]; s2.runs["a:" + d] = null; }); __nm.cal(); return ok; }, d);
+      check("あとから：別のタブで終えたまま記録していない回は、もう一度押しても消さずに記録する", kept === true);
+    }
     if (lateList.length) {
       const d = lateList[0];
       await q.evaluate((d) => { const b = document.querySelector(`.cal .miss[data-k="${d}"]`); if (b) b.click(); else { const m = document.querySelector(".calnav #prev"); m && m.click(); } }, d);
