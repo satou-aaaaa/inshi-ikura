@@ -101,9 +101,15 @@
   const yen = (n) => n.toLocaleString("ja-JP") + "円";
   const man = (n) => (n >= OKU && n % OKU === 0 ? `${n / OKU}億円` : n >= OKU ? `${Math.floor(n / OKU)}億${((n % OKU) / MAN).toLocaleString("ja-JP")}万円` : n >= MAN && n % MAN === 0 ? `${(n / MAN).toLocaleString("ja-JP")}万円` : yen(n));
   const label = (t) => (t === 0 ? "いらない（非課税）" : yen(t));
+  // part:ri:begin（shared-workflows の template/parts/data/ri.js の写し。ここでは直さない。node scripts/sync-template.mjs で写す）
   const ri = (R, a, b) => a + Math.floor(R() * (b - a + 1));
+  // part:ri:end
+  // part:shuffle:begin（shared-workflows の template/parts/data/shuffle.js の写し。ここでは直さない。node scripts/sync-template.mjs で写す）
   function shuffle(R, a) { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = ri(R, 0, i); [b[i], b[j]] = [b[j], b[i]]; } return b; }
+  // part:shuffle:end
+  // part:pickN:begin（shared-workflows の template/parts/data/pickN.js の写し。ここでは直さない。node scripts/sync-template.mjs で写す）
   function pickN(R, a, n) { return shuffle(R, a).slice(0, n); }
+  // part:pickN:end
 
   // 答えの額。営業に関しない受取書は非課税。金額の記載のないものは200円。並記の受取書は売上代金の分（非課税の判定は合計）。
   function answerOf(id, grp, tab, amt) {
@@ -138,8 +144,12 @@
   const GRP_OF = Object.fromEntries(KINDS.map((k) => [k.id, k.grp]));
   const groupsOf = (g) => Object.keys(GROUPS).filter((x) => GROUPS[x].set === GROUPS[g].set);
 
+  // part:seedOf:begin（shared-workflows の template/parts/data/seedOf.js の写し。ここでは直さない。node scripts/sync-template.mjs で写す）
   function seedOf(str) { let h = 2166136261; for (const ch of String(str)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+  // part:seedOf:end
+  // part:rng:begin（shared-workflows の template/parts/data/rng.js の写し。ここでは直さない。node scripts/sync-template.mjs で写す）
   function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  // part:rng:end
 
   function make(tag) {
     const [kind] = String(tag).split("|"), k = BY[kind];
